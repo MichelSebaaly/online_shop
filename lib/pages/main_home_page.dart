@@ -287,7 +287,7 @@ class MainHomePageState extends State<MainHomePage> {
                                     height: 14,
                                   ),
                                   const Text(
-                                    'bill',
+                                    'Bill',
                                     style: TextStyle(fontSize: 17),
                                   ),
                                 ],
