@@ -1,15 +1,17 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:online_shop/pages/profile.dart';
 import 'package:online_shop/screens/cart_screen.dart';
 import 'login.dart';
 import '../screens/detail_screen.dart';
+import 'package:http/http.dart' as http;
 
 class MainHomePage extends StatefulWidget {
   final bool? isLoggedin;
+  final String? username;
+  final String? email;
 
-  const MainHomePage({Key? key, this.isLoggedin}) : super(key: key);
+  const MainHomePage({Key? key, this.isLoggedin, this.username, this.email}) : super(key: key);
 
   @override
   State<MainHomePage> createState() => MainHomePageState();
@@ -21,37 +23,39 @@ class MainHomePageState extends State<MainHomePage> {
   bool get isLoggedin => widget.isLoggedin ?? false;
   List<Product> products = [];
 
-  get http => null;
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
-  Future<List<Product>?> fetchProducts() async {
+  Future<List<Product>> fetchProducts() async {
     // var url = Uri.parse("http://192.168.56.1/online_Shop/fetchProducts.php");
     try {
-      final response = await http.get(Uri.parse("http://192.168.56.1/online_Shop/fetchProducts.php"));
-      print("API Response: ${response.body}");
-      if (response.statusCode == 200) {
-        final List<dynamic> productsJson = jsonDecode(response.body);
+      final response = await http.get(Uri.parse("http://192.168.0.110/online_Shop/fetchProducts.php"));
+      // print("API Response: ${response.body}");
+      if (response.statusCode == 200) {//
+        if(response.body.isNotEmpty){
+          // final List<dynamic> productsJson = jsonDecode(response.body);
+          final result = jsonDecode(response.body);
 
-        setState(() {
-          products = productsJson.map((productJson) {
-            return Product(
-              id: productJson['productId'],
-              name: productJson['prodName'],
-              price: productJson['prodPrice'].toDouble(),
-              imageUrl: productJson['prodImage'],
-            );
-          }).toList();
-        });
+          List<Product> lst = [];
+          
+          for(int i = 0 ; i < result.length ; i++){
+            lst.add(Product(id: result[i]['productId'], name: result[i]['prodName'], price: result[i]['prodPrice'], imageUrl: result[i]['prodImage']));
+          }
+
+          return lst;
+        } else {
+          throw Exception("Body is empty");
+        }
+
       } else {
-        throw Exception('Failed to load products');
+        throw Exception('Status code is != 200');
       }
     } catch (error) {
-      print('Error fetching products: $error');
+      // print('Error fetching products: $error');
+      throw Exception('Error fetching products: $error');
       // Handle the error as needed
     }
   }
@@ -67,11 +71,11 @@ class MainHomePageState extends State<MainHomePage> {
   void initState() {
     super.initState();
 
-    // Fetch products when the widget is initialized
+    // Fetch products when the widget is initialized//
     _loadProducts();
   }
 
-  Future<void> _loadProducts() async {
+  void _loadProducts() async {
     try {
       final loadedProducts = await fetchProducts();
       setState(() {
@@ -107,8 +111,8 @@ class MainHomePageState extends State<MainHomePage> {
                           MaterialPageRoute(
                             builder: (context) => ProfilePage(
                               login: isLoggedin,
-                              username: 'John Doe',
-                              useremail: 'john.doeexample.com',
+                              username: widget.username!,
+                              useremail: widget.email!,
                             ),
                           ),
                         );
@@ -122,8 +126,9 @@ class MainHomePageState extends State<MainHomePage> {
         onTap: _onItemTapped,
       ),
       backgroundColor: const Color(0xfFE9EBEA),
-      body: ListView(
-        children: [
+      body: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child:
           Column(
             children: [
               Padding(
@@ -385,17 +390,33 @@ class MainHomePageState extends State<MainHomePage> {
                 ),
               ),
 
-              ListView.separated(
+              SizedBox(height: 20,),
+
+              // ListView.separated(
+              //   shrinkWrap: true,
+              //   physics: const NeverScrollableScrollPhysics(),
+              //   itemCount: products.length,
+              //   separatorBuilder: (context, index) => SizedBox(height: 10),
+              //   itemBuilder: (context, index) {
+              ////
+              //
+              //
+              //   },
+              // ),
+
+
+              ListView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                scrollDirection: Axis.vertical,
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
                 itemCount: products.length,
-                separatorBuilder: (context, index) => SizedBox(height: 10),
-                itemBuilder: (context, index) {
+
+                itemBuilder: (BuildContext context, int index){
+
                   Product product = products[index];
 
-                  return InkWell(
+                  return InkWell(//
                     onTap: () {
-                      // Navigate to the product details page or perform some action
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -403,45 +424,44 @@ class MainHomePageState extends State<MainHomePage> {
                         ),
                       );
                     },
-                    child: Container(
+                    child:
+
+                    Container(
                       height: 257,
                       width: 170,
                       color: Colors.white,
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Image(
-                            height: 124,
-                            image: AssetImage(product.imageUrl),
+                          Flexible(
+                            child: Image(
+                              image: AssetImage("assets/images/${product.imageUrl}"),
+                            ),
                           ),
-                          SizedBox(
+                          const SizedBox(
                             height: 5,
                           ),
                           Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Text(
                                   product.name,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                       color: Colors.grey,
                                       fontWeight: FontWeight.bold),
                                 ),
-                                SizedBox(
+                                const SizedBox(
                                   height: 5,
                                 ),
-                                // Text(
-                                // product.description,
-                                //   style: TextStyle(
-                                //       fontWeight: FontWeight.bold, fontSize: 15),
-                                // ),
-                                SizedBox(
+                                const SizedBox(
                                   height: 10,
                                 ),
                                 Row(
+                                  mainAxisAlignment : MainAxisAlignment.center,
                                   children: [
                                     Icon(
                                       Icons.star,
@@ -458,7 +478,7 @@ class MainHomePageState extends State<MainHomePage> {
                                       width: 3,
                                     ),
                                     Text(
-                                      '\$${product.price.toStringAsFixed(2)}',
+                                      '\$${product.price}',
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           fontSize: 20,
@@ -472,483 +492,25 @@ class MainHomePageState extends State<MainHomePage> {
                         ],
                       ),
                     ),
+
+
                   );
                 },
+
               ),
 
-              // men hon
-              //       Padding(
-              //         padding:
-              //             const EdgeInsets.only(top: 20.0, left: 18, right: 18),
-              //         child: Row(
-              //           children: [
-              //             Container(
-              //               height: 250,
-              //               width: 170,
-              //               color: Colors.white,
-              //               child: Column(
-              //                 mainAxisAlignment: MainAxisAlignment.start,
-              //                 crossAxisAlignment: CrossAxisAlignment.start,
-              //                 children: [
-              //                   const Image(
-              //                     height: 118,
-              //                     image: AssetImage('assets/images/shirt1.png'),
-              //                   ),
-              //                   const SizedBox(
-              //                     height: 5,
-              //                   ),
-              //                   Padding(
-              //                     padding: const EdgeInsets.all(8.0),
-              //                     child: Column(
-              //                       mainAxisAlignment: MainAxisAlignment.start,
-              //                       crossAxisAlignment: CrossAxisAlignment.start,
-              //                       children: [
-              //                         const Text(
-              //                           'Shirt',
-              //                           style: TextStyle(
-              //                               color: Colors.grey,
-              //                               fontWeight: FontWeight.bold),
-              //                         ),
-              //                         const SizedBox(
-              //                           height: 5,
-              //                         ),
-              //                         const Text(
-              //                           "Essential Men's Shirt-\nSleeve Crewneck T-Shirt",
-              //                           style: TextStyle(
-              //                               fontWeight: FontWeight.bold,
-              //                               fontSize: 15),
-              //                         ),
-              //                         const SizedBox(
-              //                           height: 10,
-              //                         ),
-              //                         Row(
-              //                           children: const [
-              //                             Icon(
-              //                               Icons.star,
-              //                               color: Colors.orange,
-              //                             ),
-              //                             Text(
-              //                               '4.9 | 2336',
-              //                               style: TextStyle(
-              //                                 color: Colors.grey,
-              //                                 fontWeight: FontWeight.bold,
-              //                               ),
-              //                             ),
-              //                             SizedBox(
-              //                               width: 3,
-              //                             ),
-              //                             Text(
-              //                               '\$12.00',
-              //                               style: TextStyle(
-              //                                   fontWeight: FontWeight.bold,
-              //                                   fontSize: 20,
-              //                                   color: Color(0xff2A977D)),
-              //                             )
-              //                           ],
-              //                         )
-              //                       ],
-              //                     ),
-              //                   ),
-              //                 ],
-              //               ),
-              //             ),
-              //             const SizedBox(
-              //               width: 15,
-              //             ),
-              //             InkWell(
-              //               onTap: () {
-              //                 Navigator.push(
-              //                     context,
-              //                     MaterialPageRoute(
-              //                         builder: (context) => DetailPage()));
-              //               },
-              //               child: Container(
-              //                 height: 257,
-              //                 width: 170,
-              //                 color: Colors.white,
-              //                 child: Column(
-              //                   mainAxisAlignment: MainAxisAlignment.start,
-              //                   crossAxisAlignment: CrossAxisAlignment.start,
-              //                   children: [
-              //                     const Image(
-              //                       height: 124,
-              //                       image: AssetImage('assets/images/shirt4.png'),
-              //                     ),
-              //                     const SizedBox(
-              //                       height: 5,
-              //                     ),
-              //                     Padding(
-              //                       padding: const EdgeInsets.all(8.0),
-              //                       child: Column(
-              //                         mainAxisAlignment: MainAxisAlignment.start,
-              //                         crossAxisAlignment: CrossAxisAlignment.start,
-              //                         children: [
-              //                           const Text(
-              //                             'Shirt',
-              //                             style: TextStyle(
-              //                                 color: Colors.grey,
-              //                                 fontWeight: FontWeight.bold),
-              //                           ),
-              //                           const SizedBox(
-              //                             height: 5,
-              //                           ),
-              //                           const Text(
-              //                             "Essential Men's Short-\nSleeve Crewneck T-Shirt",
-              //                             style: TextStyle(
-              //                                 fontWeight: FontWeight.bold,
-              //                                 fontSize: 15),
-              //                           ),
-              //                           const SizedBox(
-              //                             height: 10,
-              //                           ),
-              //                           Row(
-              //                             children: const [
-              //                               Icon(
-              //                                 Icons.star,
-              //                                 color: Colors.orange,
-              //                               ),
-              //                               Text(
-              //                                 '4.9 | 2336',
-              //                                 style: TextStyle(
-              //                                   color: Colors.grey,
-              //                                   fontWeight: FontWeight.bold,
-              //                                 ),
-              //                               ),
-              //                               SizedBox(
-              //                                 width: 3,
-              //                               ),
-              //                               Text(
-              //                                 '\$12.00',
-              //                                 style: TextStyle(
-              //                                     fontWeight: FontWeight.bold,
-              //                                     fontSize: 20,
-              //                                     color: Color(0xff2A977D)),
-              //                               )
-              //                             ],
-              //                           )
-              //                         ],
-              //                       ),
-              //                     ),
-              //                   ],
-              //                 ),
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //       ),
-              //la hon
-              // Padding(
-              //   padding:
-              //       const EdgeInsets.only(top: 20.0, left: 18, right: 18),
-              //   child: Row(
-              //     children: [
-              //       Container(
-              //         height: 250,
-              //         width: 170,
-              //         color: Colors.white,
-              //         child: Column(
-              //           mainAxisAlignment: MainAxisAlignment.start,
-              //           crossAxisAlignment: CrossAxisAlignment.start,
-              //           children: [
-              //             const Image(
-              //               height: 118,
-              //               image: AssetImage('assets/images/shirt1.png'),
-              //             ),
-              //             const SizedBox(
-              //               height: 5,
-              //             ),
-              //             Padding(
-              //               padding: const EdgeInsets.all(8.0),
-              //               child: Column(
-              //                 mainAxisAlignment: MainAxisAlignment.start,
-              //                 crossAxisAlignment: CrossAxisAlignment.start,
-              //                 children: [
-              //                   const Text(
-              //                     'Shirt',
-              //                     style: TextStyle(
-              //                         color: Colors.grey,
-              //                         fontWeight: FontWeight.bold),
-              //                   ),
-              //                   const SizedBox(
-              //                     height: 5,
-              //                   ),
-              //                   const Text(
-              //                     "Essential Men's Short-\nSleeve Crewneck T-Shirt",
-              //                     style: TextStyle(
-              //                         fontWeight: FontWeight.bold,
-              //                         fontSize: 15),
-              //                   ),
-              //                   const SizedBox(
-              //                     height: 10,
-              //                   ),
-              //                   Row(
-              //                     children: const [
-              //                       Icon(
-              //                         Icons.star,
-              //                         color: Colors.orange,
-              //                       ),
-              //                       Text(
-              //                         '4.9 | 2336',
-              //                         style: TextStyle(
-              //                           color: Colors.grey,
-              //                           fontWeight: FontWeight.bold,
-              //                         ),
-              //                       ),
-              //                       SizedBox(
-              //                         width: 3,
-              //                       ),
-              //                       Text(
-              //                         '\$12.00',
-              //                         style: TextStyle(
-              //                             fontWeight: FontWeight.bold,
-              //                             fontSize: 20,
-              //                             color: Color(0xff2A977D)),
-              //                       )
-              //                     ],
-              //                   )
-              //                 ],
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //       ),
-              //       const SizedBox(
-              //         width: 15,
-              //       ),
-              //       Container(
-              //         height: 257,
-              //         width: 170,
-              //         color: Colors.white,
-              //         child: Column(
-              //           mainAxisAlignment: MainAxisAlignment.start,
-              //           crossAxisAlignment: CrossAxisAlignment.start,
-              //           children: [
-              //             const Image(
-              //               height: 124,
-              //               image: AssetImage('assets/images/shirt4.png'),
-              //             ),
-              //             const SizedBox(
-              //               height: 5,
-              //             ),
-              //             Padding(
-              //               padding: const EdgeInsets.all(8.0),
-              //               child: Column(
-              //                 mainAxisAlignment: MainAxisAlignment.start,
-              //                 crossAxisAlignment: CrossAxisAlignment.start,
-              //                 children: [
-              //                   const Text(
-              //                     'Shirt',
-              //                     style: TextStyle(
-              //                         color: Colors.grey,
-              //                         fontWeight: FontWeight.bold),
-              //                   ),
-              //                   const SizedBox(
-              //                     height: 5,
-              //                   ),
-              //                   const Text(
-              //                     "Essential Men's Short-\nSleeve Crewneck T-Shirt",
-              //                     style: TextStyle(
-              //                         fontWeight: FontWeight.bold,
-              //                         fontSize: 15),
-              //                   ),
-              //                   const SizedBox(
-              //                     height: 10,
-              //                   ),
-              //                   Row(
-              //                     children: const [
-              //                       Icon(
-              //                         Icons.star,
-              //                         color: Colors.orange,
-              //                       ),
-              //                       Text(
-              //                         '4.9 | 2336',
-              //                         style: TextStyle(
-              //                           color: Colors.grey,
-              //                           fontWeight: FontWeight.bold,
-              //                         ),
-              //                       ),
-              //                       SizedBox(
-              //                         width: 3,
-              //                       ),
-              //                       Text(
-              //                         '\$12.00',
-              //                         style: TextStyle(
-              //                             fontWeight: FontWeight.bold,
-              //                             fontSize: 20,
-              //                             color: Color(0xff2A977D)),
-              //                       )
-              //                     ],
-              //                   )
-              //                 ],
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //       ),
-              //     ],
-              //   ),
-              // ),
-              // Padding(
-              //   padding:
-              //       const EdgeInsets.only(top: 20.0, left: 18, right: 18),
-              //   child: Row(
-              //     children: [
-              //       Container(
-              //         height: 250,
-              //         width: 170,
-              //         color: Colors.white,
-              //         child: Column(
-              //           mainAxisAlignment: MainAxisAlignment.start,
-              //           crossAxisAlignment: CrossAxisAlignment.start,
-              //           children: [
-              //             const Image(
-              //               height: 118,
-              //               image: AssetImage('assets/images/shirt3.png'),
-              //             ),
-              //             const SizedBox(
-              //               height: 5,
-              //             ),
-              //             Padding(
-              //               padding: const EdgeInsets.all(8.0),
-              //               child: Column(
-              //                 mainAxisAlignment: MainAxisAlignment.start,
-              //                 crossAxisAlignment: CrossAxisAlignment.start,
-              //                 children: [
-              //                   const Text(
-              //                     'Shirt',
-              //                     style: TextStyle(
-              //                         color: Colors.grey,
-              //                         fontWeight: FontWeight.bold),
-              //                   ),
-              //                   const SizedBox(
-              //                     height: 5,
-              //                   ),
-              //                   const Text(
-              //                     "Essential Men's Short-\nSleeve Crewneck T-Shirt",
-              //                     style: TextStyle(
-              //                         fontWeight: FontWeight.bold,
-              //                         fontSize: 15),
-              //                   ),
-              //                   const SizedBox(
-              //                     height: 10,
-              //                   ),
-              //                   Row(
-              //                     children: const [
-              //                       Icon(
-              //                         Icons.star,
-              //                         color: Colors.orange,
-              //                       ),
-              //                       Text(
-              //                         '4.9 | 2336',
-              //                         style: TextStyle(
-              //                           color: Colors.grey,
-              //                           fontWeight: FontWeight.bold,
-              //                         ),
-              //                       ),
-              //                       SizedBox(
-              //                         width: 3,
-              //                       ),
-              //                       Text(
-              //                         '\$12.00',
-              //                         style: TextStyle(
-              //                             fontWeight: FontWeight.bold,
-              //                             fontSize: 20,
-              //                             color: Color(0xff2A977D)),
-              //                       )
-              //                     ],
-              //                   )
-              //                 ],
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //       ),
-              //       const SizedBox(
-              //         width: 15,
-              //       ),
-              //       Container(
-              //         height: 257,
-              //         width: 170,
-              //         color: Colors.white,
-              //         child: Column(
-              //           mainAxisAlignment: MainAxisAlignment.start,
-              //           crossAxisAlignment: CrossAxisAlignment.start,
-              //           children: [
-              //             const Image(
-              //               height: 124,
-              //               image: AssetImage('assets/images/shirt2.png'),
-              //             ),
-              //             const SizedBox(
-              //               height: 5,
-              //             ),
-              //             Padding(
-              //               padding: const EdgeInsets.all(8.0),
-              //               child: Column(
-              //                 mainAxisAlignment: MainAxisAlignment.start,
-              //                 crossAxisAlignment: CrossAxisAlignment.start,
-              //                 children: [
-              //                   const Text(
-              //                     'Shirt',
-              //                     style: TextStyle(
-              //                         color: Colors.grey,
-              //                         fontWeight: FontWeight.bold),
-              //                   ),
-              //                   const SizedBox(
-              //                     height: 5,
-              //                   ),
-              //                   const Text(
-              //                     "Essential Men's Short-\nSleeve Crewneck T-Shirt",
-              //                     style: TextStyle(
-              //                         fontWeight: FontWeight.bold,
-              //                         fontSize: 15),
-              //                   ),
-              //                   const SizedBox(
-              //                     height: 10,
-              //                   ),
-              //                   Row(
-              //                     children: const [
-              //                       Icon(
-              //                         Icons.star,
-              //                         color: Colors.orange,
-              //                       ),
-              //                       Text(
-              //                         '4.9 | 2336',
-              //                         style: TextStyle(
-              //                           color: Colors.grey,
-              //                           fontWeight: FontWeight.bold,
-              //                         ),
-              //                       ),
-              //                       SizedBox(
-              //                         width: 3,
-              //                       ),
-              //                       Text(
-              //                         '\$12.00',
-              //                         style: TextStyle(
-              //                             fontWeight: FontWeight.bold,
-              //                             fontSize: 20,
-              //                             color: Color(0xff2A977D)),
-              //                       )
-              //                     ],
-              //                   )
-              //                 ],
-              // ),
-              // ),
+
             ],
           ),
-        ],
       ),
     );
-    //       ],
-    //     ),
-    //   ],
-    // ));
   }
 }
 
 class Product {
-  final int id;
+  final String id;
   final String name;
-  final double price;
+  final String price;
   final String imageUrl;
 
   Product({
@@ -957,4 +519,13 @@ class Product {
     required this.price,
     required this.imageUrl,
   });
+
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'],
+      name: json['name'],
+      price: json['price'],
+      imageUrl: json['url'],
+    );
+  }
 }

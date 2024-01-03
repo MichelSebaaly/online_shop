@@ -67,7 +67,7 @@ class ProfilePageState extends State<ProfilePage> {
                 onPressed: () {
                   Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(
                       builder: (context) =>
-                          MainHomePage(isLoggedin: false)), (route)
+                          MainHomePage(isLoggedin: false,email: null,username: null,)), (route)
                   =>
                   false
                   );

@@ -55,7 +55,7 @@ class LoginPageState extends State<LoginPage> {
             // Navigate to the home page
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => MainHomePage(isLoggedin: isLoggedin,)),
+              MaterialPageRoute(builder: (context) => MainHomePage(isLoggedin: isLoggedin,username: responseData['user']['email'],email: responseData['user']['email'],)),
             );
           }
         }
@@ -135,7 +135,7 @@ class LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         labelText: "Password",
-                        hintText: "username"),
+                        hintText: "password"),
                     keyboardType: TextInputType.text,
                     obscureText: true,
                   ),
